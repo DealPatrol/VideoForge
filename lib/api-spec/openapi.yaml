@@ -1,0 +1,1434 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: VideoForge API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: projects
+    description: Video projects
+  - name: analyze
+    description: Analysis operations
+  - name: concepts
+    description: Video concepts
+  - name: script
+    description: Script management
+  - name: media
+    description: Media assets
+  - name: voiceover
+    description: AI voiceover
+  - name: render
+    description: Video rendering
+  - name: captions
+    description: Caption generation
+  - name: publish
+    description: Publishing
+  - name: settings
+    description: App settings
+  - name: trends
+    description: Trend analysis
+  - name: dashboard
+    description: Dashboard
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard stats
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List all projects
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{projectId}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /projects/{projectId}/export:
+    get:
+      operationId: exportProject
+      tags: [projects]
+      summary: Export project as JSON
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Project export data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectExport"
+
+  /analyze:
+    post:
+      operationId: analyzeReference
+      tags: [analyze]
+      summary: Analyze YouTube URL or topic for patterns
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeInput"
+      responses:
+        "200":
+          description: Analysis results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisResult"
+
+  /projects/{projectId}/concepts:
+    get:
+      operationId: getConcepts
+      tags: [concepts]
+      summary: Get concepts for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Concepts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Concept"
+    post:
+      operationId: generateConcepts
+      tags: [concepts]
+      summary: Generate 3 video concepts from analysis
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateConceptsInput"
+      responses:
+        "200":
+          description: Generated concepts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Concept"
+
+  /projects/{projectId}/concepts/{conceptId}/select:
+    post:
+      operationId: selectConcept
+      tags: [concepts]
+      summary: Select a concept for the project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: conceptId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{projectId}/script:
+    get:
+      operationId: getScript
+      tags: [script]
+      summary: Get the script for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Script
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Script"
+    put:
+      operationId: updateScript
+      tags: [script]
+      summary: Save the script
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScriptInput"
+      responses:
+        "200":
+          description: Saved script
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Script"
+
+  /projects/{projectId}/script/generate:
+    post:
+      operationId: generateScript
+      tags: [script]
+      summary: Generate a script from selected concept
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Generated script
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Script"
+
+  /projects/{projectId}/script/check:
+    post:
+      operationId: checkOriginality
+      tags: [script]
+      summary: Run originality and similarity risk check
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Originality check result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OriginalityCheck"
+
+  /projects/{projectId}/media:
+    get:
+      operationId: listMedia
+      tags: [media]
+      summary: List media assets for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Media list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MediaAsset"
+
+  /projects/{projectId}/media/{mediaId}:
+    delete:
+      operationId: deleteMedia
+      tags: [media]
+      summary: Remove a media asset from project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: mediaId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /projects/{projectId}/media/stock:
+    post:
+      operationId: addStockMedia
+      tags: [media]
+      summary: Add stock footage to a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockMediaInput"
+      responses:
+        "201":
+          description: Added media
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaAsset"
+
+  /search/stock:
+    get:
+      operationId: searchStock
+      tags: [media]
+      summary: Search Pexels for stock footage
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: perPage
+          in: query
+          schema:
+            type: integer
+            default: 15
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [video, photo]
+            default: video
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StockSearchResult"
+
+  /projects/{projectId}/voiceover:
+    get:
+      operationId: getVoiceover
+      tags: [voiceover]
+      summary: Get voiceover status for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Voiceover info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Voiceover"
+    post:
+      operationId: generateVoiceover
+      tags: [voiceover]
+      summary: Generate AI voiceover
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoiceoverInput"
+      responses:
+        "200":
+          description: Voiceover result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Voiceover"
+
+  /projects/{projectId}/captions:
+    get:
+      operationId: getCaptions
+      tags: [captions]
+      summary: Get captions for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Captions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Captions"
+    post:
+      operationId: generateCaptions
+      tags: [captions]
+      summary: Generate captions from script/voiceover
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Generated captions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Captions"
+
+  /projects/{projectId}/render:
+    get:
+      operationId: getRenderStatus
+      tags: [render]
+      summary: Get render status for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Render status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RenderJob"
+    post:
+      operationId: startRender
+      tags: [render]
+      summary: Start a render job
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RenderInput"
+      responses:
+        "200":
+          description: Render job started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RenderJob"
+
+  /projects/{projectId}/render/retry:
+    post:
+      operationId: retryRender
+      tags: [render]
+      summary: Retry a failed render
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Render job restarted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RenderJob"
+
+  /projects/{projectId}/publish:
+    get:
+      operationId: getPublishInfo
+      tags: [publish]
+      summary: Get publish status for a project
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Publish info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishInfo"
+    post:
+      operationId: publishToYoutube
+      tags: [publish]
+      summary: Upload to YouTube or prepare download
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishInput"
+      responses:
+        "200":
+          description: Publish result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublishResult"
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get app settings
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+    put:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update app settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SettingsInput"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settings"
+
+  /trends:
+    get:
+      operationId: getTrends
+      tags: [trends]
+      summary: Get saved trend analyses
+      responses:
+        "200":
+          description: Trend analyses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendAnalysis"
+    post:
+      operationId: analyzeTrend
+      tags: [trends]
+      summary: Analyze a topic for trends
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrendInput"
+      responses:
+        "200":
+          description: Trend analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrendAnalysis"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    DashboardStats:
+      type: object
+      properties:
+        totalProjects:
+          type: integer
+        completedRenders:
+          type: integer
+        draftProjects:
+          type: integer
+        recentProjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        renderingProjects:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+      required:
+        - totalProjects
+        - completedRenders
+        - draftProjects
+        - recentProjects
+        - renderingProjects
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [draft, analyzing, concepts, scripting, media, voiceover, rendering, ready, published]
+        referenceUrl:
+          type: ["string", "null"]
+        referenceTopic:
+          type: ["string", "null"]
+        selectedConceptId:
+          type: ["string", "null"]
+        thumbnailUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        renderProgress:
+          type: ["integer", "null"]
+        renderStatus:
+          type: ["string", "null"]
+        outputFormats:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - title
+        - status
+        - createdAt
+        - updatedAt
+
+    ProjectInput:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        referenceUrl:
+          type: string
+        referenceTopic:
+          type: string
+      required:
+        - title
+
+    ProjectUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        thumbnailUrl:
+          type: string
+
+    ProjectExport:
+      type: object
+      properties:
+        project:
+          $ref: "#/components/schemas/Project"
+        script:
+          $ref: "#/components/schemas/Script"
+        concepts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Concept"
+        captions:
+          $ref: "#/components/schemas/Captions"
+        mediaAssets:
+          type: array
+          items:
+            $ref: "#/components/schemas/MediaAsset"
+        rightsManifest:
+          type: object
+          additionalProperties: true
+        attributionText:
+          type: string
+        exportedAt:
+          type: string
+      required:
+        - project
+        - exportedAt
+
+    AnalyzeInput:
+      type: object
+      properties:
+        url:
+          type: string
+        topic:
+          type: string
+        projectId:
+          type: string
+      required:
+        - projectId
+
+    AnalysisResult:
+      type: object
+      properties:
+        projectId:
+          type: string
+        hookType:
+          type: string
+        pacing:
+          type: string
+        storyStructure:
+          type: string
+        captionDensity:
+          type: string
+        ctaTiming:
+          type: string
+        audienceAngle:
+          type: string
+        estimatedDuration:
+          type: ["integer", "null"]
+        keyPatterns:
+          type: array
+          items:
+            type: string
+        contentWarnings:
+          type: array
+          items:
+            type: string
+        summary:
+          type: string
+        isMock:
+          type: boolean
+      required:
+        - projectId
+        - hookType
+        - pacing
+        - storyStructure
+        - captionDensity
+        - ctaTiming
+        - audienceAngle
+        - keyPatterns
+        - contentWarnings
+        - summary
+
+    Concept:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        title:
+          type: string
+        angle:
+          type: string
+        hook:
+          type: string
+        structure:
+          type: string
+        targetAudience:
+          type: string
+        estimatedDuration:
+          type: integer
+        uniqueElements:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - projectId
+        - title
+        - angle
+        - hook
+        - structure
+        - targetAudience
+        - estimatedDuration
+        - uniqueElements
+        - createdAt
+
+    GenerateConceptsInput:
+      type: object
+      properties:
+        analysisResult:
+          $ref: "#/components/schemas/AnalysisResult"
+      required:
+        - analysisResult
+
+    Script:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        content:
+          type: string
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScriptSection"
+        wordCount:
+          type: integer
+        estimatedDuration:
+          type: integer
+        updatedAt:
+          type: string
+        originalityScore:
+          type: ["integer", "null"]
+        isMock:
+          type: boolean
+      required:
+        - id
+        - projectId
+        - content
+        - sections
+        - wordCount
+        - estimatedDuration
+        - updatedAt
+
+    ScriptSection:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [hook, intro, main, cta, outro]
+        title:
+          type: string
+        content:
+          type: string
+        durationSeconds:
+          type: integer
+      required:
+        - id
+        - type
+        - title
+        - content
+        - durationSeconds
+
+    ScriptInput:
+      type: object
+      properties:
+        content:
+          type: string
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/ScriptSection"
+      required:
+        - content
+
+    OriginalityCheck:
+      type: object
+      properties:
+        score:
+          type: integer
+          description: 0-100 originality score
+        riskLevel:
+          type: string
+          enum: [low, medium, high]
+        issues:
+          type: array
+          items:
+            type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+        isMock:
+          type: boolean
+      required:
+        - score
+        - riskLevel
+        - issues
+        - suggestions
+
+    MediaAsset:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        type:
+          type: string
+          enum: [video, image, audio, stock_video, stock_photo]
+        source:
+          type: string
+          enum: [uploaded, pexels, generated]
+        url:
+          type: string
+        thumbnailUrl:
+          type: ["string", "null"]
+        filename:
+          type: string
+        duration:
+          type: ["integer", "null"]
+        width:
+          type: ["integer", "null"]
+        height:
+          type: ["integer", "null"]
+        attribution:
+          type: ["string", "null"]
+        license:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        orderIndex:
+          type: integer
+      required:
+        - id
+        - projectId
+        - type
+        - source
+        - url
+        - filename
+        - createdAt
+        - orderIndex
+
+    StockMediaInput:
+      type: object
+      properties:
+        externalId:
+          type: string
+        url:
+          type: string
+        thumbnailUrl:
+          type: string
+        type:
+          type: string
+          enum: [stock_video, stock_photo]
+        attribution:
+          type: string
+        license:
+          type: string
+        duration:
+          type: integer
+        width:
+          type: integer
+        height:
+          type: integer
+      required:
+        - externalId
+        - url
+        - type
+        - attribution
+
+    StockSearchResult:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/StockItem"
+        totalResults:
+          type: integer
+        page:
+          type: integer
+        perPage:
+          type: integer
+        isMock:
+          type: boolean
+      required:
+        - results
+        - totalResults
+        - page
+        - perPage
+
+    StockItem:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        thumbnailUrl:
+          type: string
+        type:
+          type: string
+        duration:
+          type: ["integer", "null"]
+        width:
+          type: integer
+        height:
+          type: integer
+        photographer:
+          type: string
+        attribution:
+          type: string
+        license:
+          type: string
+      required:
+        - id
+        - url
+        - thumbnailUrl
+        - type
+        - width
+        - height
+        - photographer
+        - attribution
+        - license
+
+    Voiceover:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        status:
+          type: string
+          enum: [pending, generating, ready, error]
+        url:
+          type: ["string", "null"]
+        voice:
+          type: string
+        duration:
+          type: ["integer", "null"]
+        error:
+          type: ["string", "null"]
+        isMock:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - projectId
+        - status
+        - voice
+        - createdAt
+
+    VoiceoverInput:
+      type: object
+      properties:
+        voice:
+          type: string
+          enum: [alloy, echo, fable, onyx, nova, shimmer]
+          default: nova
+        speed:
+          type: number
+          minimum: 0.25
+          maximum: 4.0
+          default: 1.0
+      required:
+        - voice
+
+    Captions:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        srtContent:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/CaptionEntry"
+        language:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - projectId
+        - srtContent
+        - entries
+        - language
+        - createdAt
+
+    CaptionEntry:
+      type: object
+      properties:
+        index:
+          type: integer
+        startTime:
+          type: string
+        endTime:
+          type: string
+        text:
+          type: string
+      required:
+        - index
+        - startTime
+        - endTime
+        - text
+
+    RenderJob:
+      type: object
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        status:
+          type: string
+          enum: [queued, rendering, done, error]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        format:
+          type: string
+          enum: [landscape, portrait, both]
+        landscapeUrl:
+          type: ["string", "null"]
+        portraitUrl:
+          type: ["string", "null"]
+        thumbnailUrl:
+          type: ["string", "null"]
+        error:
+          type: ["string", "null"]
+        startedAt:
+          type: ["string", "null"]
+        completedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        isMock:
+          type: boolean
+      required:
+        - id
+        - projectId
+        - status
+        - progress
+        - format
+        - createdAt
+
+    RenderInput:
+      type: object
+      properties:
+        format:
+          type: string
+          enum: [landscape, portrait, both]
+          default: both
+        includeSubtitles:
+          type: boolean
+          default: true
+      required:
+        - format
+
+    PublishInfo:
+      type: object
+      properties:
+        projectId:
+          type: string
+        youtubeEnabled:
+          type: boolean
+        lastPublishedAt:
+          type: ["string", "null"]
+        youtubeVideoId:
+          type: ["string", "null"]
+        downloadUrls:
+          type: object
+          properties:
+            landscape:
+              type: ["string", "null"]
+            portrait:
+              type: ["string", "null"]
+            srt:
+              type: ["string", "null"]
+            thumbnail:
+              type: ["string", "null"]
+            projectJson:
+              type: ["string", "null"]
+            attribution:
+              type: ["string", "null"]
+          required: []
+      required:
+        - projectId
+        - youtubeEnabled
+        - downloadUrls
+
+    PublishInput:
+      type: object
+      properties:
+        platform:
+          type: string
+          enum: [youtube, download]
+          default: download
+        title:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+      required:
+        - platform
+
+    PublishResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        platform:
+          type: string
+        youtubeVideoId:
+          type: ["string", "null"]
+        youtubeUrl:
+          type: ["string", "null"]
+        downloadUrls:
+          type: object
+          additionalProperties: true
+        message:
+          type: string
+      required:
+        - success
+        - platform
+        - message
+
+    Settings:
+      type: object
+      properties:
+        openaiApiKey:
+          type: ["string", "null"]
+          description: Masked if set
+        pexelsApiKey:
+          type: ["string", "null"]
+          description: Masked if set
+        youtubeClientId:
+          type: ["string", "null"]
+        youtubeClientSecret:
+          type: ["string", "null"]
+        defaultVoice:
+          type: string
+          default: nova
+        defaultFormat:
+          type: string
+          enum: [landscape, portrait, both]
+          default: both
+        openaiKeySet:
+          type: boolean
+        pexelsKeySet:
+          type: boolean
+        youtubeConfigured:
+          type: boolean
+      required:
+        - openaiKeySet
+        - pexelsKeySet
+        - youtubeConfigured
+        - defaultVoice
+        - defaultFormat
+
+    SettingsInput:
+      type: object
+      properties:
+        openaiApiKey:
+          type: string
+        pexelsApiKey:
+          type: string
+        youtubeClientId:
+          type: string
+        youtubeClientSecret:
+          type: string
+        defaultVoice:
+          type: string
+        defaultFormat:
+          type: string
+
+    TrendAnalysis:
+      type: object
+      properties:
+        id:
+          type: string
+        topic:
+          type: string
+        hookTypes:
+          type: array
+          items:
+            type: string
+        popularFormats:
+          type: array
+          items:
+            type: string
+        audienceInsights:
+          type: string
+        contentGaps:
+          type: array
+          items:
+            type: string
+        recommendedAngles:
+          type: array
+          items:
+            type: string
+        isMock:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - topic
+        - hookTypes
+        - popularFormats
+        - audienceInsights
+        - contentGaps
+        - recommendedAngles
+        - createdAt
+
+    TrendInput:
+      type: object
+      properties:
+        topic:
+          type: string
+      required:
+        - topic

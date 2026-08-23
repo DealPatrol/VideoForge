@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "VideoForge"
+version = "1.0.0"
+id = "artifacts/videoforge"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21584
+
+[services.development]
+run = "pnpm --filter @workspace/videoforge run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/videoforge", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/videoforge/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21584"
+BASE_PATH = "/"
