@@ -13,6 +13,7 @@ import NewProjectPage from '@/pages/new-project';
 import ProjectDetailPage from '@/pages/project-detail';
 import TrendsPage from '@/pages/trends';
 import SettingsPage from '@/pages/settings';
+import GrowthPage from '@/pages/growth';
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ function Router() {
         <Route path="/projects/new" component={NewProjectPage} />
         <Route path="/projects/:projectId" component={ProjectDetailPage} />
         <Route path="/trends" component={TrendsPage} />
+        <Route path="/growth" component={GrowthPage} />
         <Route path="/settings" component={SettingsPage} />
         <Route component={NotFound} />
       </Switch>

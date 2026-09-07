@@ -20,7 +20,12 @@ import {
   useAddStockMedia,
   getGetProjectQueryKey,
   getGetScriptQueryKey,
-  getListMediaQueryKey
+  getListMediaQueryKey,
+  getGetConceptsQueryKey,
+  getGetVoiceoverQueryKey,
+  getGetRenderStatusQueryKey,
+  getGetPublishInfoQueryKey,
+  getSearchStockQueryKey
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -58,25 +63,26 @@ export default function ProjectDetailPage() {
     query: { enabled: !!projectId, queryKey: getGetProjectQueryKey(projectId) }
   });
   const { data: concepts } = useGetConcepts(projectId, {
-    query: { enabled: !!projectId && activeTab === 'overview' }
+    query: { enabled: !!projectId && activeTab === 'overview', queryKey: getGetConceptsQueryKey(projectId) }
   });
   const { data: script } = useGetScript(projectId, {
     query: { enabled: !!projectId && (activeTab === 'script' || activeTab === 'voiceover'), queryKey: getGetScriptQueryKey(projectId) }
   });
   const { data: mediaAssets } = useListMedia(projectId, {
-    query: { enabled: !!projectId && activeTab === 'media' }
+    query: { enabled: !!projectId && activeTab === 'media', queryKey: getListMediaQueryKey(projectId) }
   });
   const { data: voiceover } = useGetVoiceover(projectId, {
-    query: { enabled: !!projectId && activeTab === 'voiceover' }
+    query: { enabled: !!projectId && activeTab === 'voiceover', queryKey: getGetVoiceoverQueryKey(projectId) }
   });
   const { data: renderStatus } = useGetRenderStatus(projectId, {
     query: { 
       enabled: !!projectId && activeTab === 'render',
+      queryKey: getGetRenderStatusQueryKey(projectId),
       refetchInterval: (query) => query.state.data?.status === 'rendering' ? 3000 : false
     }
   });
   const { data: publishInfo } = useGetPublishInfo(projectId, {
-    query: { enabled: !!projectId && activeTab === 'publish' }
+    query: { enabled: !!projectId && activeTab === 'publish', queryKey: getGetPublishInfoQueryKey(projectId) }
   });
 
   // Mutations
@@ -134,7 +140,7 @@ export default function ProjectDetailPage() {
     type: stockType,
     perPage: 12
   }, {
-    query: { enabled: !!debouncedStockQuery && isStockOpen }
+    query: { enabled: !!debouncedStockQuery && isStockOpen, queryKey: getSearchStockQueryKey({ query: debouncedStockQuery, type: stockType, perPage: 12 }) }
   });
 
   const handleAddStock = (item: any) => {
