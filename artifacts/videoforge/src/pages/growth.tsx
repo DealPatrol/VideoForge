@@ -78,6 +78,15 @@ const emptyOverview: Overview = {
   guardrails: [],
 };
 
+function getCampaignProgress(campaign: Campaign): number {
+  if (campaign.goalFollowers <= 0) return 0;
+
+  return Math.min(
+    100,
+    (campaign.currentFollowers / campaign.goalFollowers) * 100,
+  );
+}
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, {
     ...options,
@@ -115,15 +124,6 @@ export default function GrowthPage() {
   useEffect(() => {
     void load();
   }, [load]);
-
-  const primaryCampaign = overview.campaigns[0];
-  const progress = primaryCampaign
-    ? Math.min(
-        100,
-        (primaryCampaign.currentFollowers / primaryCampaign.goalFollowers) *
-          100,
-      )
-    : 0;
 
   const stats: Array<{ label: string; value: number; Icon: LucideIcon }> = [
     {
@@ -360,7 +360,7 @@ export default function GrowthPage() {
                     Goal {campaign.goalFollowers.toLocaleString()}
                   </span>
                 </div>
-                <Progress value={progress} className="h-2" />
+                <Progress value={getCampaignProgress(campaign)} className="h-2" />
               </CardContent>
             </Card>
           ))}
