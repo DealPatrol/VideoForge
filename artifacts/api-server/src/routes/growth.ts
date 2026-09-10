@@ -58,7 +58,13 @@ function serializePost(row: typeof growthPostsTable.$inferSelect) {
   };
 }
 
-function fallbackIdeas(niche: string): GeneratedIdea[] {
+function fallbackIdeas(
+  niche: string,
+  recentTopics: readonly string[] = [],
+): GeneratedIdea[] {
+  const usedTopics = new Set(
+    recentTopics.map((topic) => topic.trim().toLowerCase()),
+  );
   const seeds = [
     [
       "The expensive mistake almost everyone makes",
@@ -91,43 +97,56 @@ function fallbackIdeas(niche: string): GeneratedIdea[] {
       "The Missing Step",
     ],
   ];
-  return seeds.map(([hook, pillar, series], index) => ({
-    topic: `${niche}: ${series} #${index + 1}`,
-    contentPillar: pillar,
-    seriesName: series,
-    hookVariants: [
-      hook,
-      `Do not try ${niche} until you see this`,
-      `This changes how you think about ${niche}`,
-    ],
-    script: `${hook}. Here is the problem in one sentence. Now watch the quickest practical solution, step by step. The important detail is the final step because that is where most people lose time or money. Here is the finished result. Follow for the next real-world test.`,
-    visualPlan: [
-      "0-2s: show the result first",
-      "2-7s: demonstrate the problem",
-      "7-25s: rapid proof-driven steps",
-      "final 3s: payoff and next-episode CTA",
-    ],
-    titles: {
-      youtube: `${series}: ${niche}`,
-      instagram: `${series} — ${niche}`,
-      tiktok: `${series}: ${niche}`,
-      facebook: `${series}: ${niche}`,
-    },
-    captions: {
-      youtube: `A fast, original ${niche} test.`,
-      instagram: `Save this before your next ${niche} project.`,
-      tiktok: `Would you try this?`,
-      facebook: `A practical ${niche} result in under a minute.`,
-    },
-  }));
+  return seeds.map(([hook, pillar, series]) => {
+    const topicBase = `${niche}: ${series}`;
+    let edition = 1;
+    while (usedTopics.has(`${topicBase} #${edition}`.toLowerCase())) {
+      edition += 1;
+    }
+    const topic = `${topicBase} #${edition}`;
+    usedTopics.add(topic.toLowerCase());
+    return {
+      topic,
+      contentPillar: pillar,
+      seriesName: series,
+      hookVariants: [
+        hook,
+        `Do not try ${niche} until you see this`,
+        `This changes how you think about ${niche}`,
+      ],
+      script: `${hook}. Here is the problem in one sentence. Now watch the quickest practical solution, step by step. The important detail is the final step because that is where most people lose time or money. Here is the finished result. Follow for the next real-world test.`,
+      visualPlan: [
+        "0-2s: show the result first",
+        "2-7s: demonstrate the problem",
+        "7-25s: rapid proof-driven steps",
+        "final 3s: payoff and next-episode CTA",
+      ],
+      titles: {
+        youtube: `${series}: ${niche}`,
+        instagram: `${series} — ${niche}`,
+        tiktok: `${series}: ${niche}`,
+        facebook: `${series}: ${niche}`,
+      },
+      captions: {
+        youtube: `A fast, original ${niche} test.`,
+        instagram: `Save this before your next ${niche} project.`,
+        tiktok: `Would you try this?`,
+        facebook: `A practical ${niche} result in under a minute.`,
+      },
+    };
+  });
 }
 
 function parseIdeas(
   value: Record<string, unknown> | null,
   niche: string,
+  recentTopics: readonly string[],
 ): GeneratedIdea[] {
   const raw = value?.["ideas"];
-  if (!Array.isArray(raw)) return fallbackIdeas(niche);
+  if (!Array.isArray(raw)) return fallbackIdeas(niche, recentTopics);
+  const usedTopics = new Set(
+    recentTopics.map((topic) => topic.trim().toLowerCase()),
+  );
   const ideas = raw
     .slice(0, 6)
     .map((item): GeneratedIdea | null => {
@@ -158,8 +177,14 @@ function parseIdeas(
         captions,
       };
     })
-    .filter((idea): idea is GeneratedIdea => idea !== null);
-  return ideas.length >= 3 ? ideas : fallbackIdeas(niche);
+    .filter((idea): idea is GeneratedIdea => {
+      if (idea === null) return false;
+      const topic = idea.topic.trim().toLowerCase();
+      if (usedTopics.has(topic)) return false;
+      usedTopics.add(topic);
+      return true;
+    });
+  return ideas.length >= 3 ? ideas : fallbackIdeas(niche, recentTopics);
 }
 
 function scoreMetrics(metrics: PostMetrics): number {
@@ -176,6 +201,22 @@ function scoreMetrics(metrics: PostMetrics): number {
         Math.min(shareRate, 3) * 8 +
         Math.min(followRate, 2) * 10,
     ),
+  );
+}
+
+function meetsSuccessThresholds(
+  metrics: PostMetrics,
+  thresholds: GrowthStrategy["successThresholds"],
+): boolean {
+  const views = metrics.views ?? 0;
+  if (views <= 0) return false;
+  return (
+    (metrics.threeSecondHoldRate ?? 0) >= thresholds.threeSecondHoldRate &&
+    (metrics.averagePercentageViewed ?? 0) >=
+      thresholds.averagePercentageViewed &&
+    ((metrics.shares ?? 0) / views) * 100 >= thresholds.shareRate &&
+    ((metrics.followersGained ?? 0) / views) * 100 >=
+      thresholds.followerConversionRate
   );
 }
 
@@ -199,8 +240,7 @@ router.get("/growth", async (req, res): Promise<void> => {
     const posts = await db
       .select()
       .from(growthPostsTable)
-      .orderBy(desc(growthPostsTable.createdAt))
-      .limit(40);
+      .orderBy(desc(growthPostsTable.createdAt));
     const published = posts.filter((post) => post.status === "published");
     const winners = [...published]
       .filter((p) => p.performanceScore !== null)
@@ -332,16 +372,25 @@ router.post(
             ),
           ),
         )
-        .orderBy(desc(growthPostsTable.performanceScore))
-        .limit(20);
+        .orderBy(desc(growthPostsTable.createdAt));
       const winners = recent
-        .filter((p) => (p.performanceScore ?? 0) >= 70)
+        .filter((post) =>
+          meetsSuccessThresholds(
+            post.metrics,
+            campaign.strategy.successThresholds,
+          ),
+        )
+        .sort((a, b) => (b.performanceScore ?? 0) - (a.performanceScore ?? 0))
         .slice(0, 5);
       const ai = await callOpenAIJSON(
         `Create exactly 6 original vertical short-video ideas for this growth campaign.\nNiche: ${campaign.niche}\nAudience: ${campaign.audience}\nContent pillars: ${campaign.strategy.pillars.join(", ")}\nAvoid repeating: ${recent.map((p) => p.topic).join(" | ") || "none"}\nWinning patterns to expand: ${winners.map((p) => `${p.seriesName}: ${p.hook}`).join(" | ") || "none yet"}\nEach video must be 18-35 seconds, show the payoff in the first two seconds, deliver proof or a useful result, and end with a natural reason to follow for the next episode. No copied scripts, engagement bait, unverifiable claims, or copyrighted clips.\nReturn JSON { ideas: [{ topic, contentPillar, seriesName, hookVariants: [three distinct hooks], script, visualPlan: [shot instructions], titles: {youtube,instagram,tiktok,facebook}, captions: {youtube,instagram,tiktok,facebook} }] }.`,
         "You are a rigorous short-form growth producer. Optimize for retention, shares, and qualified followers while obeying platform rules.",
       );
-      const ideas = parseIdeas(ai, campaign.niche);
+      const ideas = parseIdeas(
+        ai,
+        campaign.niche,
+        recent.map((post) => post.topic),
+      );
       const created = [];
       const now = Date.now();
       for (let index = 0; index < ideas.length; index += 1) {
