@@ -7,3 +7,4 @@ export * from "./renders";
 export * from "./captions";
 export * from "./settings";
 export * from "./trends";
+export * from "./growth";

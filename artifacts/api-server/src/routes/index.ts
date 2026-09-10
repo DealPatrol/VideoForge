@@ -12,6 +12,7 @@ import renderRouter from "./render";
 import publishRouter from "./publish";
 import settingsRouter from "./settings";
 import trendsRouter from "./trends";
+import growthRouter from "./growth";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(renderRouter);
 router.use(publishRouter);
 router.use(settingsRouter);
 router.use(trendsRouter);
+router.use(growthRouter);
 
 export default router;
